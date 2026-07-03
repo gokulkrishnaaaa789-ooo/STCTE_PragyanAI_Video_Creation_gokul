@@ -55,7 +55,7 @@ def handle_youtube_download(url):
         # Clear previous errors
         if 'yt_error' in st.session_state:
             del st.session_state['yt_error']
-            
+           
         res_path = download_youtube_audio(url)
         if res_path:
             st.session_state['audio_path'] = res_path
@@ -66,27 +66,27 @@ def create_video(image_files, duplicate_count, fps, audio_path):
     """Processes images and merges with audio using MoviePy 2.0+ syntax."""
     clips = []
     duration_per_image = duplicate_count / fps
-    target_resolution = (1280, 720) 
+    target_resolution = (1280, 720)
 
     for idx, img_file in enumerate(image_files):
         temp_img_path = f"temp_img_{idx}.png"
         with open(temp_img_path, "wb") as f:
             f.write(img_file.getbuffer())
-        
+       
         # MoviePy 2.0+ uses .with_duration() and .resized()
         clip = ImageClip(temp_img_path).with_duration(duration_per_image)
-        clip = clip.resized(target_resolution) 
+        clip = clip.resized(target_resolution)
         clips.append(clip)
-    
+   
     final_video = concatenate_videoclips(clips, method="compose")
     final_video = final_video.with_fps(fps)
-    
+   
     audio_clip = AudioFileClip(audio_path)
     if audio_clip.duration > final_video.duration:
         audio_clip = audio_clip.with_duration(final_video.duration)
 
     final_clip = final_video.with_audio(audio_clip)
-    
+   
     output_filename = "output_video.mp4"
     final_clip.write_videofile(output_filename, codec="libx264", audio_codec="aac")
     return output_filename
@@ -105,7 +105,7 @@ with st.sidebar:
     st.header("Video Settings")
     fps = st.slider("Frames Per Second (FPS)", 1, 60, 24)
     duplicates = st.number_input("Frames per Image", min_value=1, value=48)
-    
+   
     if st.button("Clear Cache & Temp Files"):
         cleanup_temp_files()
         st.rerun()
@@ -122,7 +122,7 @@ with col1:
 with col2:
     st.subheader("2. Audio")
     audio_source = st.radio("Source", ["Upload File", "YouTube Link"])
-    
+   
     if audio_source == "Upload File":
         uploaded_audio = st.file_uploader("Upload Audio", type=["mp3", "wav"])
         if uploaded_audio:
@@ -131,15 +131,15 @@ with col2:
                 f.write(uploaded_audio.getbuffer())
             st.session_state['audio_path'] = manual_path
             st.success("Audio File Ready")
-    
+   
     else:
         yt_url = st.text_input("Enter YouTube URL")
         if yt_url:
             # handle_youtube_download is defined above, so no NameError
-            st.button("Fetch YouTube Audio", 
-                      on_click=handle_youtube_download, 
+            st.button("Fetch YouTube Audio",
+                      on_click=handle_youtube_download,
                       args=(yt_url,))
-            
+           
             if 'yt_error' in st.session_state:
                 st.error(f"Download Error: {st.session_state['yt_error']}")
                 st.info("💡 YouTube often blocks cloud servers. Use 'Upload File' as a fallback.")
@@ -159,7 +159,7 @@ if st.button("🚀 Create & Play Video", use_container_width=True):
             with st.spinner("Rendering video... This may take a minute."):
                 video_file = create_video(uploaded_images, duplicates, fps, st.session_state['audio_path'])
                 st.video(video_file)
-                
+               
                 with open(video_file, "rb") as f:
                     st.download_button("📥 Download Result", f, file_name="my_video.mp4")
         except Exception as e:
